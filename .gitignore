@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.vscode/
+*.local
+
+# Environment / secrets
+.env
+.env.*
+backend/.env
+backend/.env.*
+
+# Python virtualenv
+backend/.venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary build scripts and fonts
+*.ttf
+generate_srs_pdf.py
+datasets

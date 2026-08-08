@@ -1,0 +1,31 @@
+{
+  "calibrated": true,
+  "dataset": "CEDAR",
+  "protocol": "writer-disjoint calibration/test split; pre-cropped signatures; document detector bypassed",
+  "seed": 42,
+  "writer_count": 55,
+  "calibration_writers": 44,
+  "test_writers": 11,
+  "enrollment_count": 8,
+  "genuine_samples": 1320,
+  "forged_samples": 1320,
+  "embedding_weight": 0.95,
+  "feature_weight": 0.05,
+  "threshold": 0.9271469116210938,
+  "calibration_metrics": {
+    "far": 0.05397727272727273,
+    "frr": 0.08380681818181818,
+    "balanced_accuracy": 0.9311079545454546,
+    "comparisons": 1760
+  },
+  "unseen_test_metrics": {
+    "far": 0.030303030303030304,
+    "frr": 0.03977272727272727,
+    "balanced_accuracy": 0.9649621212121212,
+    "roc_auc": 0.9958892906336089,
+    "eer": 0.03409090909090909,
+    "eer_threshold": 0.9265966415405273,
+    "comparisons": 440
+  },
+  "status": "baseline_calibration_from_actual_CEDAR_run; validate across additional writer-disjoint seeds before making broad accuracy claims"
+}

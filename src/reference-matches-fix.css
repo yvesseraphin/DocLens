@@ -1,0 +1,50 @@
+/* Reference Matches image containment fix.
+ * Keep uploaded signature crops inside their designed UI boxes regardless
+ * of source image aspect ratio or resolution.
+ */
+
+.rpt-ref-query-box,
+.rpt-ref-sample-box,
+.rpt-region-crop,
+.rpt-base-illus-box,
+.rpt-pen-illus-box {
+  overflow: hidden;
+}
+
+.rpt-ref-query-box > img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center;
+  flex: 0 1 auto;
+}
+
+.rpt-ref-sample-box > img {
+  display: block;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center;
+}
+
+.rpt-region-crop > img {
+  display: block;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center;
+}
+
+.rpt-base-illus-box > img,
+.rpt-pen-illus-box > img {
+  display: block;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center;
+}
