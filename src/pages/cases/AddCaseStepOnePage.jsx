@@ -1,37 +1,53 @@
-import { useState } from 'react';
-import { CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
-import { useCase } from '../../context/CaseContext.jsx';
-import { useToast } from '../../context/ToastContext.jsx';
+import { useState } from "react";
+import { CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
+import { useCase } from "../../context/CaseContext.jsx";
+import { useToast } from "../../context/ToastContext.jsx";
 
-const CASE_TYPES = ['Forgery', 'Identity Review', 'Document Fraud'];
+const CASE_TYPES = ["Forgery", "Identity Review", "Document Fraud"];
 
 export function AddCaseStepOnePage({ navigate }) {
   const toast = useToast();
   const { setCaseInfo } = useCase();
 
-  const [caseRef, setCaseRef] = useState('');
-  const [selectedType, setSelectedType] = useState('Forgery');
+  const [caseRef, setCaseRef] = useState("");
+  const [selectedType, setSelectedType] = useState("Forgery");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [subjectNames, setSubjectNames] = useState('');
-  const [signerName, setSignerName] = useState('');
-  const [dateReceived, setDateReceived] = useState('');
+  const [subjectNames, setSubjectNames] = useState("");
+  const [signerName, setSignerName] = useState("");
+  const [dateReceived, setDateReceived] = useState("");
 
   function handleNext() {
-    if (!caseRef.trim()) { toast.error('Please enter a Case ID.'); return; }
-    if (!signerName.trim()) { toast.error('Please enter the signer name.'); return; }
-    setCaseInfo({ caseRef, caseType: selectedType, subjectNames, signerName, dateReceived });
-    navigate('/cases/add/step-2');
+    if (!caseRef.trim()) {
+      toast.error("Please enter a Case ID.");
+      return;
+    }
+    if (!signerName.trim()) {
+      toast.error("Please enter the signer name.");
+      return;
+    }
+    setCaseInfo({
+      caseRef,
+      caseType: selectedType,
+      subjectNames,
+      signerName,
+      dateReceived,
+    });
+    navigate("/cases/add/step-2");
   }
 
   return (
     <section className="add-case-root" aria-labelledby="add-case-title">
       <nav className="add-breadcrumb" aria-label="Breadcrumb">
-        <button type="button" onClick={() => navigate('/cases')}>Cases</button>
+        <button type="button" onClick={() => navigate("/cases")}>
+          Cases
+        </button>
         <ChevronRight size={20} strokeWidth={2.5} />
         <span>Add Case</span>
       </nav>
 
-      <h1 className="add-title" id="add-case-title">Add New Case</h1>
+      <h1 className="add-title" id="add-case-title">
+        Add New Case
+      </h1>
 
       <div className="add-steps-bar">
         <div className="add-step-item active">
@@ -69,7 +85,7 @@ export function AddCaseStepOnePage({ navigate }) {
               aria-labelledby="case-type-label"
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   setIsDropdownOpen((prev) => !prev);
                 }
@@ -80,7 +96,7 @@ export function AddCaseStepOnePage({ navigate }) {
                 <ChevronDown
                   size={20}
                   strokeWidth={2.5}
-                  className={`add-select-arrow ${isDropdownOpen ? 'open' : ''}`}
+                  className={`add-select-arrow ${isDropdownOpen ? "open" : ""}`}
                 />
               </div>
 
@@ -91,7 +107,7 @@ export function AddCaseStepOnePage({ navigate }) {
                       key={type}
                       role="option"
                       aria-selected={selectedType === type}
-                      className={`add-select-option ${selectedType === type ? 'selected' : ''}`}
+                      className={`add-select-option ${selectedType === type ? "selected" : ""}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedType(type);

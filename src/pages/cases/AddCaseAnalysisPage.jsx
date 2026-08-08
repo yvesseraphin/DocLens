@@ -1,18 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { useCase } from '../../context/CaseContext.jsx';
-import { useToast } from '../../context/ToastContext.jsx';
-import { createCase, uploadCaseFiles, analyzeCase } from '../../lib/api.js';
+import { useState, useEffect, useRef } from "react";
+import { ChevronRight } from "lucide-react";
+import { useCase } from "../../context/CaseContext.jsx";
+import { useToast } from "../../context/ToastContext.jsx";
+import { createCase, uploadCaseFiles, analyzeCase } from "../../lib/api.js";
 
 const THINKING_STEPS = [
-  { label: 'Decoding document and detecting signature region...' },
-  { label: 'Cropping and preprocessing signature samples...' },
-  { label: 'Extracting neural embeddings...' },
-  { label: 'Computing cosine similarity against reference samples...' },
-  { label: 'Running Grad-CAM explainability analysis...' },
-  { label: 'Detecting pen lifts and baseline deviation...' },
-  { label: 'Determining verdict and confidence score...' },
-  { label: 'Generating forensic narrative...' },
+  { label: "Decoding document and detecting signature region..." },
+  { label: "Cropping and preprocessing signature samples..." },
+  { label: "Extracting neural embeddings..." },
+  { label: "Computing cosine similarity against reference samples..." },
+  { label: "Running Grad-CAM explainability analysis..." },
+  { label: "Detecting pen lifts and baseline deviation..." },
+  { label: "Determining verdict and confidence score..." },
+  { label: "Generating forensic narrative..." },
 ];
 
 export function AddCaseAnalysisPage({ navigate }) {
@@ -37,13 +37,13 @@ export function AddCaseAnalysisPage({ navigate }) {
   async function runPipeline() {
     try {
       const caseRecord = await createCase({
-        case_id:            caseData.caseRef || `CASE-${Date.now()}`,
-        case_type:          caseData.caseType || 'Forgery',
-        subject_names:      caseData.subjectNames || '',
-        signer_name:        caseData.signerName || '',
-        date_received:      caseData.dateReceived || '',
-        upload_reason:      caseData.uploadReason || '',
-        sample_description: caseData.sampleDescription || '',
+        case_id: caseData.caseRef || `CASE-${Date.now()}`,
+        case_type: caseData.caseType || "Forgery",
+        subject_names: caseData.subjectNames || "",
+        signer_name: caseData.signerName || "",
+        date_received: caseData.dateReceived || "",
+        upload_reason: caseData.uploadReason || "",
+        sample_description: caseData.sampleDescription || "",
       });
 
       const caseId = caseRecord.id;
@@ -62,29 +62,40 @@ export function AddCaseAnalysisPage({ navigate }) {
 
       let result = null;
       if (caseData.questionedFile) {
-        result = await analyzeCase(caseId, caseData.questionedFile, caseData.referenceFiles || []);
+        result = await analyzeCase(
+          caseId,
+          caseData.questionedFile,
+          caseData.referenceFiles || [],
+        );
       }
 
       completeAnalysis(result);
-      navigate('/cases/report');
+      navigate("/cases/report");
     } catch (err) {
-      toast.error(err.message || 'Analysis failed. Please try again.');
+      toast.error(err.message || "Analysis failed. Please try again.");
       setTimeout(() => {
         completeAnalysis(null);
-        navigate('/cases/report');
+        navigate("/cases/report");
       }, 2000);
     }
   }
 
   return (
-    <section className="add-case-root add-analysis-page" aria-labelledby="add-case-title">
+    <section
+      className="add-case-root add-analysis-page"
+      aria-labelledby="add-case-title"
+    >
       <nav className="add-breadcrumb" aria-label="Breadcrumb">
-        <button type="button" onClick={() => navigate('/cases')}>Cases</button>
+        <button type="button" onClick={() => navigate("/cases")}>
+          Cases
+        </button>
         <ChevronRight size={20} strokeWidth={2.5} />
         <span>Add Case</span>
       </nav>
 
-      <h1 className="add-title" id="add-case-title">Add New Case</h1>
+      <h1 className="add-title" id="add-case-title">
+        Add New Case
+      </h1>
 
       <div className="add-analysis-body">
         <div className="add-analysis-center">
@@ -97,11 +108,19 @@ export function AddCaseAnalysisPage({ navigate }) {
           <div className="add-thinking-wrap">
             <button
               type="button"
-              className={`add-thinking-btn ${showThinking ? 'expanded' : ''}`}
+              className={`add-thinking-btn ${showThinking ? "expanded" : ""}`}
               onClick={() => setShowThinking((prev) => !prev)}
             >
-              <ChevronRight size={16} strokeWidth={2.2} className="add-thinking-chevron" />
-              <span>{step >= THINKING_STEPS.length ? `Thought for ${THINKING_STEPS.length} steps` : 'Thinking...'}</span>
+              <ChevronRight
+                size={16}
+                strokeWidth={2.2}
+                className="add-thinking-chevron"
+              />
+              <span>
+                {step >= THINKING_STEPS.length
+                  ? `Thought for ${THINKING_STEPS.length} steps`
+                  : "Thinking..."}
+              </span>
             </button>
 
             {showThinking && (
@@ -110,12 +129,18 @@ export function AddCaseAnalysisPage({ navigate }) {
                   {THINKING_STEPS.map((s, i) =>
                     step > i ? (
                       <li key={i} className="add-thinking-item">
-                        <span className={`add-thinking-bullet ${
-                          step === i + 1 && step < THINKING_STEPS.length ? 'active' : step > i + 1 ? 'done' : ''
-                        }`} />
+                        <span
+                          className={`add-thinking-bullet ${
+                            step === i + 1 && step < THINKING_STEPS.length
+                              ? "active"
+                              : step > i + 1
+                                ? "done"
+                                : ""
+                          }`}
+                        />
                         <span className="add-thinking-label">{s.label}</span>
                       </li>
-                    ) : null
+                    ) : null,
                   )}
                 </ul>
               </div>
@@ -127,7 +152,7 @@ export function AddCaseAnalysisPage({ navigate }) {
           <button
             type="button"
             className="add-wait-btn"
-            onClick={() => navigate('/cases')}
+            onClick={() => navigate("/cases")}
           >
             Wait
           </button>
