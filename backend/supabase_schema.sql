@@ -1,12 +1,3 @@
--- ============================================================
--- DocLens  –  Supabase PostgreSQL Schema  (v2)
--- ============================================================
--- Run this ONCE in the Supabase SQL editor:
---   Dashboard → SQL Editor → New query → paste → Run
---
--- Safe to re-run: every statement uses IF NOT EXISTS / OR REPLACE.
--- ============================================================
-
 -- ─────────────────────────────────────────────────────────────
 -- Extensions
 -- ─────────────────────────────────────────────────────────────
@@ -16,9 +7,6 @@ create extension if not exists "pg_trgm";    -- trigram indexes for fast text se
 
 -- ─────────────────────────────────────────────────────────────
 -- 1. profiles
---    Mirrors auth.users so the app can query full_name without
---    hitting the auth schema (which is restricted in RLS policies).
---    A trigger keeps it in sync with auth.users automatically.
 -- ─────────────────────────────────────────────────────────────
 create table if not exists public.profiles (
   id          uuid         primary key references auth.users(id) on delete cascade,
@@ -28,7 +16,6 @@ create table if not exists public.profiles (
   updated_at  timestamptz  not null default now()
 );
 
--- Auto-populate on sign-up
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
@@ -65,10 +52,9 @@ create policy "profiles_update_own"
 
 -- ─────────────────────────────────────────────────────────────
 -- 2. cases
---    Core table: one row per forensic case.
 -- ─────────────────────────────────────────────────────────────
 create table if not exists public.cases (
-  -- Identity
+
   id                  uuid         primary key default gen_random_uuid(),
   user_id             uuid         not null references auth.users(id) on delete cascade,
 
@@ -83,21 +69,18 @@ create table if not exists public.cases (
   upload_reason       text         not null default '',
   sample_description  text         not null default '',
 
-  -- File URLs (set by POST /cases/{id}/upload → Supabase Storage CDN)
-  questioned_url      text,                            -- public URL of the questioned document
-  reference_urls      text[]       not null default '{}', -- public URLs of reference documents
 
-  -- Analysis lifecycle
-  -- pending   → uploaded → analyzing → analyzed
-  --                                  → error
+  questioned_url      text,                            
+  reference_urls      text[]       not null default '{}', 
+
+
   status              text         not null default 'pending'
                         check (status in ('pending','uploaded','analyzing','analyzed','error')),
 
-  -- Denormalised verdict / confidence for fast list queries (CasesPage metrics)
+
   verdict             text         check (verdict in ('FORGED','GENUINE')),
   confidence          int          check (confidence >= 0 and confidence <= 100),
 
-  -- Full AnalysisResult JSON blob (restored into CaseContext on "View" from CasesPage)
   analysis_result     jsonb,
 
   -- Timestamps
@@ -106,22 +89,19 @@ create table if not exists public.cases (
 );
 
 -- ── Indexes ──────────────────────────────────────────────────
--- Fast lookup by owner (list_cases query)
+
 create index if not exists cases_user_id_idx
   on public.cases (user_id, created_at desc);
 
--- Fast lookup by owner + id (get_case, analyze, upload ownership checks)
 create index if not exists cases_user_case_idx
   on public.cases (id, user_id);
 
--- Trigram index for case_ref and signer_name search (CasesPage search bar)
 create index if not exists cases_case_ref_trgm_idx
   on public.cases using gin (case_ref gin_trgm_ops);
 
 create index if not exists cases_signer_name_trgm_idx
   on public.cases using gin (signer_name gin_trgm_ops);
 
--- Partial index for cases awaiting review (dashboard "pending" count)
 create index if not exists cases_pending_idx
   on public.cases (user_id)
   where status = 'pending';
@@ -163,10 +143,6 @@ create policy "cases_delete_own"
   on public.cases for delete
   using (auth.uid() = user_id);
 
--- Service-role key (used by the backend) bypasses RLS automatically.
--- No extra policy needed for the backend.
-
-
 -- ─────────────────────────────────────────────────────────────
 -- 3. Storage bucket: documents
 --    Stores: questioned docs, reference docs, and signature crops.
@@ -182,8 +158,8 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'documents',
   'documents',
-  true,            -- public bucket so frontend can display images with CDN URLs
-  104857600,       -- 100 MB per file
+  true,           
+  104857600,   
   array[
     'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/bmp'
   ]
@@ -194,21 +170,17 @@ on conflict (id) do update
       allowed_mime_types = excluded.allowed_mime_types;
 
 -- ── Storage RLS ──────────────────────────────────────────────
--- Authenticated users can upload to their own folder only.
--- The backend uses service-role key so it bypasses these policies.
 
--- Drop old policies if re-running
 drop policy if exists "storage_upload_own"  on storage.objects;
 drop policy if exists "storage_read_own"    on storage.objects;
 drop policy if exists "storage_delete_own"  on storage.objects;
 drop policy if exists "storage_update_own"  on storage.objects;
 
--- Anyone can read (bucket is public — CDN URLs work without auth)
+
 create policy "storage_read_public"
   on storage.objects for select
   using (bucket_id = 'documents');
 
--- Only the owning user can upload into their folder
 create policy "storage_upload_own"
   on storage.objects for insert
   with check (
@@ -216,7 +188,7 @@ create policy "storage_upload_own"
     and auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- Only the owning user can update their files
+
 create policy "storage_update_own"
   on storage.objects for update
   using (
@@ -224,7 +196,6 @@ create policy "storage_update_own"
     and auth.uid()::text = (storage.foldername(name))[1]
   );
 
--- Only the owning user can delete their files
 create policy "storage_delete_own"
   on storage.objects for delete
   using (
@@ -234,7 +205,7 @@ create policy "storage_delete_own"
 
 
 -- ─────────────────────────────────────────────────────────────
--- 4. Useful views (optional — helpful for dashboard queries)
+-- 4. Useful views
 -- ─────────────────────────────────────────────────────────────
 
 -- Per-user summary: total, flagged, analyzed counts
@@ -250,14 +221,10 @@ select
 from public.cases
 group by user_id;
 
--- RLS on the view is inherited from the cases table when accessed
--- via the service-role key on the backend.
 
 
 -- ─────────────────────────────────────────────────────────────
 -- 5. Migration helpers
---    Uncomment and run these if upgrading an EXISTING database
---    that was created from the previous schema version.
 -- ─────────────────────────────────────────────────────────────
 
 -- Add columns added in v2 (safe: IF NOT EXISTS)
