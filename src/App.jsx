@@ -1,10 +1,10 @@
-import { useMemo, useEffect } from 'react';
-import { routes } from './routes.jsx';
-import { Shell } from './components/Shell.jsx';
-import { LoginPage } from './pages/auth/LoginPage.jsx';
-import { CasesPage } from './pages/cases/CasesPage.jsx';
-import { useRoute } from './hooks/useRoute.js';
-import { auth, healthCheck } from './lib/api.js';
+import { useMemo, useEffect } from "react";
+import { routes } from "./routes.jsx";
+import { Shell } from "./components/Shell.jsx";
+import { LoginPage } from "./pages/auth/LoginPage.jsx";
+import { CasesPage } from "./pages/cases/CasesPage.jsx";
+import { useRoute } from "./hooks/useRoute.js";
+import { auth, healthCheck } from "./lib/api.js";
 
 const PING_INTERVAL_MS = 10 * 60 * 1000;
 
@@ -12,18 +12,23 @@ function App() {
   const [path, navigate] = useRoute();
 
   const isAppPage = path
-    ? path.startsWith('/dashboard') || path.startsWith('/cases') || path.startsWith('/reports')
+    ? path.startsWith("/dashboard") ||
+      path.startsWith("/cases") ||
+      path.startsWith("/reports")
     : false;
 
   useEffect(() => {
     if (isAppPage && !auth.isLoggedIn()) {
-      navigate('/login');
+      navigate("/login");
     }
   }, [path, isAppPage, navigate]);
 
   useEffect(() => {
     healthCheck().catch(() => {});
-    const id = setInterval(() => healthCheck().catch(() => {}), PING_INTERVAL_MS);
+    const id = setInterval(
+      () => healthCheck().catch(() => {}),
+      PING_INTERVAL_MS,
+    );
     return () => clearInterval(id);
   }, []);
 
