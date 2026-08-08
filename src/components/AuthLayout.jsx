@@ -1,4 +1,4 @@
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from "lucide-react";
 
 export function AuthLayout({ eyebrow, title, subtitle, children }) {
   return (
@@ -18,7 +18,10 @@ export function AuthLayout({ eyebrow, title, subtitle, children }) {
             <span className="box box-two" />
           </div>
         </div>
-        <p>Visual proof for forged signatures, altered fields, and document tampering.</p>
+        <p>
+          Visual proof for forged signatures, altered fields, and document
+          tampering.
+        </p>
       </section>
       <section className="auth-panel">
         <p className="eyebrow">{eyebrow}</p>

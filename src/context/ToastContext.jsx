@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 
 const ToastContext = createContext(null);
 
@@ -18,16 +24,21 @@ export function ToastProvider({ children }) {
   }, []);
 
   const api = {
-    error:   (msg) => show(msg),
+    error: (msg) => show(msg),
     success: (msg) => show(msg),
-    info:    (msg) => show(msg),
+    info: (msg) => show(msg),
   };
 
   return (
     <ToastContext.Provider value={api}>
       {children}
       {banner && (
-        <div className="sys-banner" role="alert" aria-live="assertive" aria-atomic="true">
+        <div
+          className="sys-banner"
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+        >
           <span className="sys-banner-msg">{banner.message}</span>
           <button
             type="button"
@@ -45,6 +56,6 @@ export function ToastProvider({ children }) {
 
 export function useToast() {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error('useToast must be used inside ToastProvider');
+  if (!ctx) throw new Error("useToast must be used inside ToastProvider");
   return ctx;
 }
