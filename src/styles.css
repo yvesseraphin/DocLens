@@ -350,7 +350,6 @@ h1 {
   margin-bottom: 24px !important;
 }
 
-/* â”€â”€ Email Verification â”€â”€ */
 .verify-heading {
   margin: 0 0 10px;
   color: #3a3a3c;
@@ -443,7 +442,6 @@ h1 {
 .login-field input:-webkit-autofill:hover,
 .login-field input:-webkit-autofill:focus,
 .login-field input:-webkit-autofill:active {
-  /* Trick the browser into keeping the normal white background */
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
   box-shadow: 0 0 0 1000px #ffffff inset;
   -webkit-text-fill-color: #3f3f42;
@@ -663,12 +661,6 @@ h1 {
   bottom: 118px;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   SHELL  (CSS grid layout per spec)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   SHELL  (CSS grid layout per spec)
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .sh-app {
   --sidebar-width: 260px;
   --header-height: 76px;
@@ -678,7 +670,7 @@ h1 {
   color: #0F0F0F;
 }
 
-/* Sidebar spans both rows */
+
 .sh-sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -803,7 +795,6 @@ h1 {
 }
 
 @media (min-width: 901px) {
-  /* On desktop, sidebar already shows full brand, so hide header brand title to keep topbar clean */
   .sh-header-brand {
     display: none;
   }
@@ -866,9 +857,6 @@ h1 {
   overflow: auto;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   DASHBOARD
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .db-root {
   display: flex;
   flex-direction: column;
@@ -947,7 +935,6 @@ h1 {
   line-height: 1;
 }
 
-/* Content grid */
 .db-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
