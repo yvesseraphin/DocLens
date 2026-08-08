@@ -739,5 +739,3 @@ DocLens combines computer vision, deep visual representation, calibrated compari
 ## License
 
 See the repository for the current licensing terms.
-#   D o c L e n s  
- 
