@@ -10,6 +10,9 @@ _MIN_ASPECT = 1.25
 _MAX_ASPECT = 14.0
 _MIN_AREA_FRACTION = 0.0007
 _MAX_AREA_FRACTION = 0.24
+# This is intentionally a detector score, not a forensic match threshold.
+# It only prevents the legacy fallback box from being treated as a signature.
+_MIN_DETECTION_SCORE = 0.20
 
 
 def _pad_box(box: Tuple[int, int, int, int], img_w: int, img_h: int, pad_x_frac: float = 0.10, pad_y_frac: float = 0.28) -> Tuple[int, int, int, int]:
@@ -86,7 +89,13 @@ def _find_candidates(image: Image.Image, y0: int, y1: int) -> List[tuple[float, 
     return sorted(scored, key=lambda item: item[0], reverse=True)
 
 
-def detect_signature_region(image: Image.Image) -> Tuple[int, int, int, int]:
+def detect_signature_region_with_confidence(image: Image.Image) -> tuple[Tuple[int, int, int, int] | None, float]:
+    """Return the best detected signature region and its detector score.
+
+    Unlike the legacy detector, this function never invents a fallback region.
+    That distinction is important for validation: a fallback crop must not be
+    interpreted as evidence that a signature exists.
+    """
     img_w, img_h = image.size
     regions = [
         (int(img_h * 0.55), img_h),
@@ -96,12 +105,22 @@ def detect_signature_region(image: Image.Image) -> Tuple[int, int, int, int]:
     candidates: List[tuple[float, Tuple[int, int, int, int]]] = []
     for y0, y1 in regions:
         candidates.extend(_find_candidates(image, y0, y1))
-    if candidates:
-        # Deduplicate highly-overlapping candidates, keeping the highest score.
-        selected = candidates[0][1]
-        sx, sy, sw, sh = selected
-        return _pad_box((sx, sy, sw, sh), img_w, img_h)
+    if not candidates:
+        return None, 0.0
 
+    score, box = max(candidates, key=lambda item: item[0])
+    if score < _MIN_DETECTION_SCORE:
+        return None, float(np.clip(score, 0.0, 1.0))
+    return _pad_box(box, img_w, img_h), float(np.clip(score, 0.0, 1.0))
+
+
+def detect_signature_region(image: Image.Image) -> Tuple[int, int, int, int]:
+    """Legacy region detector kept for compatibility with existing callers."""
+    region, _ = detect_signature_region_with_confidence(image)
+    if region is not None:
+        return region
+
+    img_w, img_h = image.size
     fb_w = int(img_w * 0.48)
     fb_h = max(1, int(img_h * 0.12))
     fb_x = int((img_w - fb_w) * 0.5)
