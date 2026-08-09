@@ -24,3 +24,4 @@ Thumbs.db
 *.ttf
 generate_srs_pdf.py
 datasets
+scripts
