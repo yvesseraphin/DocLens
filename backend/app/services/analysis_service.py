@@ -19,7 +19,7 @@ from app.core.storage import upload_file
 from app.cv.embedder import embed, release_model
 from app.cv.explainability import compute_key_differences, compute_overlay, compute_self_consistency
 from app.cv.preprocess import bytes_to_image, normalize_signature_crop
-from app.cv.region_detector import detect_signature_region, detect_signature_region_with_confidence
+from app.cv.region_detector import detect_signature_region_with_confidence
 from app.cv.similarity import compute_verdict, detect_disguise, compute_reference_consensus
 from app.models.analysis import AnalysisResult, ForensicMarker, ForensicOverlay, Hotspot, KeyDifference, Point, ReferenceMatch, SignatureRegion
 from app.services.report_service import generate_written_report
@@ -143,7 +143,7 @@ class AnalysisService:
         try:
             result = await self._run_pipeline(case_id, user_id, case_ref, signer_name, questioned, references, t_start, row)
         except Exception as exc:
-            if isinstance(exc, HTTPException) and isinstance(exc.detail, dict) and str(exc.detail.get("error_code", "")).endswith("_SIGNATURE_NOT_DETECTED"):
+            if isinstance(exc, HTTPException) and isinstance(exc.detail, dict) and str(exc.detail.get("error_code", "")) in {"NO_SIGNATURE_DETECTED", "REFERENCE_SIGNATURE_NOT_DETECTED"}:
                 release_model()
                 _release_memory()
                 raise exc
