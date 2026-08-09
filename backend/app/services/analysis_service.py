@@ -19,7 +19,7 @@ from app.core.storage import upload_file
 from app.cv.embedder import embed, release_model
 from app.cv.explainability import compute_key_differences, compute_overlay, compute_self_consistency
 from app.cv.preprocess import bytes_to_image, normalize_signature_crop
-from app.cv.region_detector import detect_signature_region
+from app.cv.region_detector import detect_signature_region, detect_signature_region_with_confidence
 from app.cv.similarity import compute_verdict, detect_disguise, compute_reference_consensus
 from app.models.analysis import AnalysisResult, ForensicMarker, ForensicOverlay, Hotspot, KeyDifference, Point, ReferenceMatch, SignatureRegion
 from app.services.report_service import generate_written_report
@@ -80,7 +80,6 @@ def _make_context_crop(image: Image.Image, x: int, y: int, w: int, h: int) -> tu
     bx0, by0 = x - cx0, y - cy0
     bx1, by1 = bx0 + w, by0 + h
     draw.rectangle((bx0, by0, bx1, by1), outline=(126, 55, 35, 235), width=max(3, min(context.size) // 180))
-    # A subtle translucent band makes the detected region readable without hiding the ink.
     draw.rectangle((bx0, by0, bx1, by1), fill=(126, 55, 35, 18))
     return context, (cx0, cy0, context.width, context.height)
 
@@ -99,7 +98,7 @@ def _map_overlay_to_context(overlay: dict, signature_box: tuple[int, int, int, i
         )
 
     mapped = dict(overlay)
-    bx, by = point(0.0, float(overlay.get("baseline_y", 0.72)))
+    _, by = point(0.0, float(overlay.get("baseline_y", 0.72)))
     mapped["baseline_y"] = by
 
     mapped["pen_lifts"] = []
@@ -144,6 +143,10 @@ class AnalysisService:
         try:
             result = await self._run_pipeline(case_id, user_id, case_ref, signer_name, questioned, references, t_start, row)
         except Exception as exc:
+            if isinstance(exc, HTTPException) and isinstance(exc.detail, dict) and str(exc.detail.get("error_code", "")).endswith("_SIGNATURE_NOT_DETECTED"):
+                release_model()
+                _release_memory()
+                raise exc
             self._sb.table(self.TABLE).update({"status": "error"}).eq("id", case_id).execute()
             release_model()
             _release_memory()
@@ -163,14 +166,41 @@ class AnalysisService:
             ref_images.append(bytes_to_image(rb, rf.content_type or ""))
             del rb
 
-        q_x, q_y, q_w, q_h = detect_signature_region(q_image)
+        # Validation gate: the legacy detector always returned a fallback box when
+        # it found no candidate. That fallback was then treated as a real signature
+        # and sent through ResNet18. Use the confidence-aware detector here so an
+        # unrelated image cannot reach forensic matching.
+        q_detection, q_detection_score = detect_signature_region_with_confidence(q_image)
+        if q_detection is None:
+            self._sb.table(self.TABLE).update({"status": "uploaded"}).eq("id", case_id).execute()
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "error_code": "NO_SIGNATURE_DETECTED",
+                    "message": "No signature was detected in the uploaded questioned specimen. Please upload a clear image containing a handwritten signature.",
+                    "detection_score": round(q_detection_score, 3),
+                },
+            )
+
+        q_x, q_y, q_w, q_h = q_detection
         q_region = q_image.crop((q_x, q_y, q_x + q_w, q_y + q_h)).convert("RGB")
         q_crop = normalize_signature_crop(q_region)
         display_context, context_box = _make_context_crop(q_image, q_x, q_y, q_w, q_h)
 
         ref_crops = []
         for ref_img in ref_images:
-            rx, ry, rw, rh = detect_signature_region(ref_img)
+            ref_detection, ref_detection_score = detect_signature_region_with_confidence(ref_img)
+            if ref_detection is None:
+                self._sb.table(self.TABLE).update({"status": "uploaded"}).eq("id", case_id).execute()
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail={
+                        "error_code": "REFERENCE_SIGNATURE_NOT_DETECTED",
+                        "message": "A reference specimen does not contain a detectable signature. Please replace it with a clear handwritten signature sample.",
+                        "detection_score": round(ref_detection_score, 3),
+                    },
+                )
+            rx, ry, rw, rh = ref_detection
             ref_crops.append(normalize_signature_crop(ref_img.crop((rx, ry, rx + rw, ry + rh))))
         del ref_images
         _release_memory()
@@ -181,9 +211,6 @@ class AnalysisService:
         ref_embs = [embed(rc) for rc in ref_crops]
         self_consistency = compute_self_consistency(q_crop)
 
-        # Use the detected signature region for forensic localization so that the
-        # evidence coordinates describe actual document content, not the model's
-        # square 480px normalization canvas.
         overlay_raw = compute_overlay(q_region, ref_crops, doc_w=q_region.width, doc_h=q_region.height)
         overlay_dict = _map_overlay_to_context(overlay_raw, (q_x, q_y, q_w, q_h), context_box)
         key_diffs_raw = compute_key_differences(overlay_raw)
